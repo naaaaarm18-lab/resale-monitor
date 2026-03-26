@@ -1,0 +1,28 @@
+name: resale monitor
+
+on:
+  schedule:
+    - cron: "*/1 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check resale
+        run: |
+          URLS=(
+            "https://relief-ticket.jp/events/artist/41/129"
+            "https://relief-ticket.jp/events/artist/40/127"
+          )
+
+          for url in "${URLS[@]}"; do
+            html=$(curl -s "$url")
+
+            if echo "$html" | grep -q "リセール"; then
+              curl -X POST https://api.line.me/v2/bot/message/broadcast \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.LINE_TOKEN }}" \
+              -d "{\"messages\":[{\"type\":\"text\",\"text\":\"リセール出品検知: $url\"}]}"
+            fi
+          done
